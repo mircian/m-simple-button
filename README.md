@@ -1,0 +1,1 @@
+A simple WordPress plugin that adds a button to TinyMCE to generate a shortcode.
