@@ -34,6 +34,9 @@ class msb_main {
 		// filter the external js plugins loaded in the editor
 		add_filter( 'mce_external_plugins', array( $this, 'add_embed_button_js' ) );
 
+		// add the actual shortcode being output
+		add_shortcode('msb_video', array($this, 'video_shortcode'));
+
 	}
 
 	/**
@@ -71,6 +74,68 @@ class msb_main {
 
 		return $plugin_array;
 
+	}
+
+	/**
+	 * @param $atts array of shortcode attributes
+	 *
+	 * @return false|string
+	 */
+	public function video_shortcode($atts) {
+
+		$a = shortcode_atts(array(
+			'video' => false,
+			'autoplay' => false,
+			'width' => false,
+			'height' => false
+		), $atts, 'ttu_video');
+
+		$embed = false;
+
+		if ( $a['video'] ) {
+
+			// add autoplay using a filter
+			if ( $a['autoplay'] ) {
+				add_filter('oembed_result',array($this, 'oembed_result') , 15, 3);
+			}
+
+			// build the shortcode based on options
+			$args = array();
+			if ( $a['width'] ) {
+				$args['width'] = $a['width'];
+			}
+			if ( $a['height'] ) {
+				$args['height'] = $a['height'];
+			}
+			$embed = wp_oembed_get( esc_url($a['video']), $args );
+
+			// remove the filter to prevent changing other oembeds
+			if ( $a['autoplay'] ) {
+				remove_filter( 'oembed_result', array( $this, 'oembed_result' ), 15 );
+			}
+
+		}
+
+		return $embed;
+
+	}
+
+	/**
+	 * @param $html string with the html of the embed
+	 * @param $url string the url used to generate the embed
+	 * @param $args array options sent as arguments to the wp_oembed_get function
+	 *
+	 * @return mixed
+	 */
+	function oembed_result($html, $url, $args) {
+
+		// $args includes custom arguments
+		// modify $html as you need
+		if ( isset($args['autoplay']) && $args['autoplay'] ) {
+			$html = str_replace('feature=oembed', 'feature=oembed&autoplay=1', $html);
+		}
+
+		return $html;
 	}
 
 }
